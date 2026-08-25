@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bookmark Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; line-height: 1.6; }
+    form { margin-bottom: 24px; display: flex; gap: 8px; }
+    input { flex: 1; padding: 8px; }
+    button { padding: 8px 14px; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 10px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
+    a { color: #007bff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>My Bookmarks</h1>
+
+  <form action="/add" method="post">
+    <input type="text" name="title" placeholder="Title" required>
+    <input type="url" name="url" placeholder="https://example.com" required>
+    <button type="submit">Add</button>
+  </form>
+
+  <ul>
+    {% for bookmark in bookmarks %}
+      <li>
+        <a href="{{ bookmark.url }}" target="_blank">{{ bookmark.title }}</a>
+        <form action="/delete/{{ bookmark.id }}" method="post" style="display:inline; margin:0;">
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+    {% else %}
+      <li>No bookmarks yet.</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
