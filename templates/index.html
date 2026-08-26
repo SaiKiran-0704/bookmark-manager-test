@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html>
 <head>
   <title>Bookmark Manager</title>
@@ -21,6 +21,14 @@
     <button type="submit">Add</button>
   </form>
 
+  <form action="/" method="get">
+    <input type="text" name="q" placeholder="Search by title..." value="{{ q or request.args.get('q', '') }}">
+    <button type="submit">Search</button>
+    {% if q or request.args.get('q') %}
+      <a href="/" style="padding: 8px; text-decoration: none; align-self: center;">Clear</a>
+    {% endif %}
+  </form>
+
   <ul>
     {% for bookmark in bookmarks %}
       <li>
@@ -30,7 +38,11 @@
         </form>
       </li>
     {% else %}
-      <li>No bookmarks yet.</li>
+      {% if q or request.args.get('q') %}
+        <li>No matching bookmarks found.</li>
+      {% else %}
+        <li>No bookmarks yet.</li>
+      {% endif %}
     {% endfor %}
   </ul>
 </body>
