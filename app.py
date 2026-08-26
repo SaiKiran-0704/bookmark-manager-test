@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify
 from models import db, Bookmark
 
 app = Flask(__name__)
@@ -32,6 +32,14 @@ def delete_bookmark(bookmark_id):
         db.session.delete(bookmark)
         db.session.commit()
     return redirect("/")
+
+
+@app.route("/toggle_favorite/<int:bookmark_id>", methods=["POST", "PATCH"])
+def toggle_bookmark_favorite(bookmark_id):
+    bookmark = Bookmark.query.get_or_404(bookmark_id)
+    bookmark.is_favorite = not bookmark.is_favorite
+    db.session.commit()
+    return jsonify({"id": bookmark.id, "is_favorite": bookmark.is_favorite})
 
 
 if __name__ == "__main__":

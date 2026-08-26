@@ -1,37 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Bookmark Manager</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; line-height: 1.6; }
-    form { margin-bottom: 24px; display: flex; gap: 8px; }
-    input { flex: 1; padding: 8px; }
-    button { padding: 8px 14px; }
-    ul { list-style: none; padding: 0; }
-    li { padding: 10px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
-    a { color: #007bff; text-decoration: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Manager</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"], 
+        .form-group input[type="url"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .filter-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .bookmark-list {
+            list-style: none;
+            padding: 0;
+        }
+        .bookmark-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            gap: 15px;
+        }
+        .bookmark-item:last-child {
+            border-bottom: none;
+        }
+        .star-icon {
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            color: #ccc;
+            transition: color 0.2s;
+        }
+        .star-icon.favorited {
+            color: #f1c40f;
+        }
+        .bookmark-details {
+            flex-grow: 1;
+        }
+        .bookmark-title {
+            font-weight: 600;
+            color: #2c3e50;
+            text-decoration: none;
+        }
+        .bookmark-title:hover {
+            text-decoration: underline;
+        }
+        .bookmark-url {
+            display: block;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
 </head>
 <body>
-  <h1>My Bookmarks</h1>
+    <div class="container">
+        <h1>Bookmarks</h1>
 
-  <form action="/add" method="post">
-    <input type="text" name="title" placeholder="Title" required>
-    <input type="url" name="url" placeholder="https://example.com" required>
-    <button type="submit">Add</button>
-  </form>
-
-  <ul>
-    {% for bookmark in bookmarks %}
-      <li>
-        <a href="{{ bookmark.url }}" target="_blank">{{ bookmark.title }}</a>
-        <form action="/delete/{{ bookmark.id }}" method="post" style="display:inline; margin:0;">
-          <button type="submit">Delete</button>
+        <form action="/add" method="POST">
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" required placeholder="E.g., GitHub">
+            </div>
+            <div class="form-group">
+                <label for="url">URL</label>
+                <input type="url" id="url" name="url" required placeholder="https://github.com">
+            </div>
+            <button type="submit">Add Bookmark</button>
         </form>
-      </li>
-    {% else %}
-      <li>No bookmarks yet.</li>
-    {% endfor %}
-  </ul>
+
+        <div class="filter-container">
+            <input type="checkbox" id="filter-favorites" onchange="applyDOMFilter()">
+            <label for="filter-favorites" style="font-weight: bold; cursor: pointer;">Show Favorites Only</label>
+        </div>
+
+        <ul class="bookmark-list" id="bookmark-list">
+            {% for bookmark in bookmarks %}
+            <li class="bookmark-item" data-id="{{ bookmark.id }}" data-favorite="{{ 'true' if bookmark.is_favorite else 'false' }}">
+                <span 
+                    class="star-icon {% if bookmark.is_favorite %}favorited{% endif %}" 
+                    onclick="handleFavoriteToggle({{ bookmark.id }})"
+                    title="Toggle Favorite">
+                    {% if bookmark.is_favorite %}★{% else %}☆{% endif %}
+                </span>
+                <div class="bookmark-details">
+                    <a href="{{ bookmark.url }}" target="_blank" class="bookmark-title">{{ bookmark.title }}</a>
+                    <span class="bookmark-url">{{ bookmark.url }}</span>
+                </div>
+                <form action="/delete/{{ bookmark.id }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <script>
+        async function handleFavoriteToggle(bookmarkId) {
+            try {
+                const response = await fetch(`/toggle_favorite/${bookmarkId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStarUI(bookmarkId, data.is_favorite);
+                    applyDOMFilter();
+                } else {
+                    console.error('Failed to toggle favorite status');
+                }
+            } catch (error) {
+                console.error('Error while updating favorite state:', error);
+            }
+        }
+
+        function updateStarUI(bookmarkId, isFavorite) {
+            const item = document.querySelector(`.bookmark-item[data-id="${bookmarkId}"]`);
+            if (item) {
+                item.setAttribute('data-favorite', isFavorite ? 'true' : 'false');
+                const star = item.querySelector('.star-icon');
+                if (star) {
+                    if (isFavorite) {
+                        star.classList.add('favorited');
+                        star.textContent = '★';
+                    } else {
+                        star.classList.remove('favorited');
+                        star.textContent = '☆';
+                    }
+                }
+            }
+        }
+
+        function applyDOMFilter() {
+            const showFavoritesOnly = document.getElementById('filter-favorites').checked;
+            const items = document.querySelectorAll('.bookmark-item');
+            items.forEach(item => {
+                const isFavorite = item.getAttribute('data-favorite') === 'true';
+                if (showFavoritesOnly && !isFavorite) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = 'flex';
+                }
+            });
+        }
+    </script>
 </body>
 </html>
