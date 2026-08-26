@@ -11,8 +11,14 @@ with app.app_context():
 
 @app.route("/")
 def index():
-    bookmarks = Bookmark.query.order_by(Bookmark.created_at.desc()).all()
-    return render_template("index.html", bookmarks=bookmarks)
+    search_query = request.args.get("q", "").strip()
+    if search_query:
+        bookmarks = Bookmark.query.filter(
+            Bookmark.title.ilike(f"%{search_query}%") | Bookmark.url.ilike(f"%{search_query}%")
+        ).order_by(Bookmark.created_at.desc()).all()
+    else:
+        bookmarks = Bookmark.query.order_by(Bookmark.created_at.desc()).all()
+    return render_template("index.html", bookmarks=bookmarks, search_query=search_query)
 
 
 @app.route("/add", methods=["POST"])
