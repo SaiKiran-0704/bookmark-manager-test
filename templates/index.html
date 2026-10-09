@@ -15,23 +15,80 @@
 <body>
   <h1>My Bookmarks</h1>
 
+  <form id="search-form" action="/" method="get">
+    <input type="text" id="search-input" name="q" placeholder="Search bookmarks..." value="{{ q or '' }}">
+    <button type="submit">Search</button>
+    <button type="button" onclick="clearSearchInput()">Clear</button>
+  </form>
+
   <form action="/add" method="post">
     <input type="text" name="title" placeholder="Title" required>
     <input type="url" name="url" placeholder="https://example.com" required>
     <button type="submit">Add</button>
   </form>
 
-  <ul>
+  <ul id="bookmarks-list">
     {% for bookmark in bookmarks %}
-      <li>
+      <li class="bookmark-item" data-title="{{ bookmark.title|e }}" data-url="{{ bookmark.url|e }}">
         <a href="{{ bookmark.url }}" target="_blank">{{ bookmark.title }}</a>
         <form action="/delete/{{ bookmark.id }}" method="post" style="display:inline; margin:0;">
           <button type="submit">Delete</button>
         </form>
       </li>
     {% else %}
-      <li>No bookmarks yet.</li>
+      <li id="no-bookmarks-placeholder">No bookmarks yet.</li>
     {% endfor %}
+    <li id="no-results-message" style="display: none; text-align: center; color: #666; padding: 10px;">No matching bookmarks found.</li>
   </ul>
+
+  <script>
+    function filterBookmarksLive() {
+      const searchInput = document.getElementById('search-input');
+      const query = searchInput.value.toLowerCase();
+      const items = document.querySelectorAll('.bookmark-item');
+      let visibleCount = 0;
+
+      items.forEach(item => {
+        const title = item.getAttribute('data-title').toLowerCase();
+        const url = item.getAttribute('data-url').toLowerCase();
+        if (title.includes(query) || url.includes(query)) {
+          item.style.display = '';
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+
+      toggleNoResultsMessage(visibleCount === 0 && items.length > 0);
+    }
+
+    function toggleNoResultsMessage(show) {
+      const msg = document.getElementById('no-results-message');
+      if (msg) {
+        msg.style.display = show ? 'block' : 'none';
+      }
+    }
+
+    function clearSearchInput() {
+      const searchInput = document.getElementById('search-input');
+      searchInput.value = '';
+      filterBookmarksLive();
+      if (window.location.search.includes('q=')) {
+        window.location.href = '/';
+      }
+    }
+
+    function initSearchFilter() {
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.addEventListener('input', filterBookmarksLive);
+        if (searchInput.value) {
+          filterBookmarksLive();
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initSearchFilter);
+  </script>
 </body>
 </html>
